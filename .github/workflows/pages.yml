@@ -1,0 +1,57 @@
+name: Deploy road-collapse map
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website-*.zip'
+      - 'release.json'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Verify release archive
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {createHash} from 'node:crypto';
+          const release=JSON.parse(fs.readFileSync('release.json','utf8'));
+          if(!/^website-[a-zA-Z0-9.-]+\.zip$/.test(release.archive)) throw new Error('Invalid archive name');
+          const actual=createHash('sha256').update(fs.readFileSync(release.archive)).digest('hex');
+          if(actual!==release.sha256) throw new Error('Release archive hash mismatch');
+          fs.appendFileSync(process.env.GITHUB_ENV,'SITE_ARCHIVE='+release.archive+'\n');
+          JS
+      - name: Prepare website
+        run: |
+          unzip -q "$SITE_ARCHIVE" -d _site
+          test -f _site/index.html
+          grep -q 'name="robots" content="noindex, nofollow"' _site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
