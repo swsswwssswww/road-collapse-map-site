@@ -1,7 +1,7 @@
 {
-  "version": "1.1.0",
-  "archive": "website-v1.1.0.zip",
-  "sha256": "e4b037129986181e3e973411b76cfd5c74292cb7504ea1bdad905c7fa51449f4",
-  "sourceCommit": "209c1ca1694dadac4c7e97755c78fce14ec7477d",
+  "version": "1.1.1",
+  "archive": "website-v1.1.1.zip",
+  "sha256": "bfe9881d576898f26bc13969d0ed6d7bd9295733c07639f4db9f3b0eeb9950cd",
+  "sourceCommit": "9b05bf49682e0a6a86a0079537986238441b67a7",
   "dataAsOf": "2026-10-22"
 }
