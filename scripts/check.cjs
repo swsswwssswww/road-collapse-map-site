@@ -46,8 +46,14 @@ ok(run("recordsAtFrame(buildPlaybackFrames(national,'national'),1,true).length")
 ok(run("playbackKey({date:'2024-02-30'},'featured')")===null,'Reject impossible dates');
 ok(run("buildPlaybackFrames([{date:null}], 'featured').length")===0,'Never invent missing dates');
 for(const km of [20,10,5,2,1])ok(run('Array.from(aggregateGrid(national,'+km+').values()).reduce((n,r)=>n+r.length,0)')===33234,'Grid preserves all located records: '+km);
-ok(run('historicalCatalog.length')===60,'60 historical regions');
-ok(run('historicalCatalog.every(r=>r.periods.length&&r.periods.every(p=>p.start<=p.end&&p.sheets.length&&p.sheets.every(s=>s.bounds.length===4&&s.bounds.every(Number.isFinite)&&s.bounds[0]<s.bounds[2]&&s.bounds[1]<s.bounds[3])))'),'Valid historical dates and sheet bounds');
+ok(run('historicalCatalog.length')===62,'60 original regions plus two additional sources');
+ok(run('historicalCatalog.every(r=>r.periods.length&&r.periods.every(p=>p.start<=p.end&&(p.sheets.length||r.coverageApproximate&&r.coverageBounds.length===4)&&p.sheets.every(s=>s.bounds.length===4&&s.bounds.every(Number.isFinite)&&s.bounds[0]<s.bounds[2]&&s.bounds[1]<s.bounds[3])))'),'Valid dates and explicit approximate coverage');
+ok(run('historicalCatalog.reduce((n,r)=>n+r.periods.length,0)')===329,'All 329 period sets retained');
+ok(run("historicalMatches(35.68,139.75).some(x=>x.region.id==='naro-rapid')"),'Tokyo finds additional Meiji survey');
+ok(run("historicalMatches(37.39,136.9).some(x=>x.region.id==='noto-extension'&&x.periods.length===5)"),'Noto finds all five added periods');
+ok(run("historicalMatches(0,0).length")===0,'Unavailable places are not marked covered');
+ok(run("historicalCatalog.filter(r=>!r.provider).reduce((n,r)=>n+r.periods.length,0)")===323,'Existing source coverage preserved');
+ok(run("historyDateLabel(historicalCatalog[60],historicalCatalog[60].periods[0])").includes('Published 1909–1911'),'Publication dates distinguished from survey dates');
 ok(run("sheetContains({bounds:[35,139,36,140]},35.5,139.5)"),'Within historical sheet');
 ok(!run("sheetContains({bounds:[35,139,36,140]},34,139.5)"),'Outside historical sheet stays unavailable');
 context.mapMock=mapMock;run('map=mapMock;showSelectedPoint=()=>{};renderList=()=>{};renderMap=()=>{};renderTable=()=>{};renderStats=()=>{};renderAudit=()=>{};');
