@@ -72,5 +72,22 @@ element('#year-min').value='2024';element('#year-max').value='2024';run('filterR
 element('#depth-min').value='1';element('#depth-missing').value='exclude';run('filterRecords();');ok(run('filtered.every(r=>r.fiscalYear===2024&&r.depthM>=1)'),'Combined year/depth filters');
 element('#year-min').value='';element('#year-max').value='';element('#depth-min').value='';element('#depth-missing').value='only';run('filterRecords();');ok(run('filtered.every(r=>!num(r.depthM))'),'Missing depth is explicit');
 element('#depth-missing').value='include';element('#search').value='東京都文京区';run('filterRecords();');ok(run('filtered.length')===12,'Search retains expected Bunkyo records');
-console.log(JSON.stringify({passed:checks,records:records.length,mapped:33234,years,regions:run('historicalCatalog.length')},null,2));
+const autoScale=run('buildGridScale(aggregateGrid(national,10))');
+ok(autoScale.max===1286&&autoScale.upper===80&&autoScale.lower===0,'Nationwide outliers do not flatten automatic colors');
+ok(autoScale.color(10)!==autoScale.color(40)&&autoScale.color(80)===autoScale.color(1286),'Intermediate counts differ; outliers saturate without removal');
+ok(run('buildGridScale(new Map()).upper')===1,'Empty scale remains finite');
+ok(run('buildGridScale(new Map([["a",[{}]]])).upper')===1,'Single record scale');
+ok(run('buildGridScale(new Map([["a",Array(7)],["b",Array(7)]])).upper')===7,'Equal counts never exceed observed maximum');
+ok(run('buildGridScale(aggregateGrid(national,10),{lower:5,upper:1000}).upper')===1000,'Manual range can still include outliers');
+run('manualGridLimits=null;gridScaleSignature="";prepareGridScale(aggregateGrid(national,10),10);manualGridLimits={lower:5,upper:1000};');
+ok(run('prepareGridScale(aggregateGrid(national,10),10).upper')===1000,'Unchanged view preserves manual scale');
+ok(run('prepareGridScale(aggregateGrid(national.filter(r=>r.fiscalYear===2024),10),10).upper')===40,'Year selection resets and recalculates auto');
+ok(run('prepareGridScale(aggregateGrid(national.filter(r=>r.prefecture==="埼玉県"),10),10).upper')===60,'Prefecture selection recalculates auto');
+ok(run('prepareGridScale(aggregateGrid(national.filter(r=>r.prefecture==="埼玉県"&&r.fiscalYear===2024),10),10).upper')===32,'Combined filters clamp to observed maximum');
+ok(run('prepareGridScale(aggregateGrid(national,5),5).upper')===40,'Mesh size recalculates auto');
+run('playback.active=true;playback.frames=buildPlaybackFrames(national,"national");playback.scaleCache.clear();playback.signature="scale-test";');
+const playbackUpper=run('prepareGridScale(aggregateGrid(playback.frames[0].records,10),10).upper');
+ok(run('prepareGridScale(aggregateGrid(playback.frames[1].records,10),10).upper')===playbackUpper,'Playback keeps common scale between frames');
+run('playback.active=false;');
+console.log(JSON.stringify({passed:checks,records:records.length,mapped:33234,years,regions:run('historicalCatalog.length'),autoUpper:autoScale.upper},null,2));
 
