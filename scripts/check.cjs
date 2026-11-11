@@ -95,5 +95,19 @@ run('playback.active=true;playback.frames=buildPlaybackFrames(national,"national
 const playbackUpper=run('prepareGridScale(aggregateGrid(playback.frames[0].records,10),10).upper');
 ok(run('prepareGridScale(aggregateGrid(playback.frames[1].records,10),10).upper')===playbackUpper,'Playback keeps common scale between frames');
 run('playback.active=false;');
+run("touchGesture=false;mapPointerType='mouse';");
+ok(run('canPreviewMapRecord({})'),'Mouse preview works even when device media queries report no hover');
+run("showMapSummary('record preview',{originalEvent:{pointerType:'mouse'}});");
+ok(element('#map-summary').hidden===false&&element('#map-summary').innerHTML==='record preview','Mouse hover exposes the preview');
+run("clearMapSummary();mapPointerType='touch';showMapSummary('touch preview',{});");
+ok(element('#map-summary').hidden,'Touch input never opens a hover preview');
+ok(!run("canPreviewMapRecord({originalEvent:{pointerType:'mouse',sourceCapabilities:{firesTouchEvents:true}}})"),'Synthetic mouse events from touch are ignored');
+run("mapPointerType='mouse';touchGesture=true;");
+ok(!run('canPreviewMapRecord({})'),'Drag suppresses preview');
+run("touchGesture=false;lastGesture=-1000;var originalDetail=openDetail,originalCandidates=openCandidates;var recordSelection=null;openDetail=(id,fly)=>recordSelection={id,fly};openCandidates=(rows,heading)=>recordSelection={count:rows.length,heading};selectMapRecords([{id:'one'}],'test');");
+ok(run("recordSelection.id==='one'&&recordSelection.fly===false"),'One record opens its detail directly');
+run("selectMapRecords([{id:'one'},{id:'two'}],'shared');");
+ok(run("recordSelection.count===2&&recordSelection.heading==='shared'"),'Overlapping records retain a choice of details');
+run('openDetail=originalDetail;openCandidates=originalCandidates;');
 console.log(JSON.stringify({passed:checks,records:records.length,mapped:33234,years,regions:run('historicalCatalog.length'),autoUpper:autoScale.upper},null,2));
 
